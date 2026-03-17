@@ -1,72 +1,64 @@
-"""agent-orchestrator — models module. Multi-agent orchestration framework for complex task coordination"""
-import logging
+"""Pydantic models for agent orchestration."""
+from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
-from pydantic import BaseModel
+from enum import Enum
+from datetime import datetime
+import uuid
 
-logger = logging.getLogger(__name__)
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    WAITING_APPROVAL = "waiting_approval"
 
+class AgentCapability(str, Enum):
+    RESEARCH = "research"
+    CODE = "code"
+    REVIEW = "review"
+    WRITE = "write"
+    ANALYZE = "analyze"
 
-class ModelsConfig(BaseModel):
-    """Configuration for Models."""
-    name: str = "models"
-    enabled: bool = True
-    max_retries: int = 3
-    timeout: float = 30.0
-    options: Dict[str, Any] = field(default_factory=dict) if False else {}
+class SubTask(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    description: str
+    required_capabilities: List[AgentCapability]
+    dependencies: List[str] = []
+    priority: int = 1
+    status: TaskStatus = TaskStatus.PENDING
+    result: Optional[Any] = None
+    assigned_agent: Optional[str] = None
 
+class TaskGraph(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    description: str
+    subtasks: List[SubTask]
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-class ModelsResult(BaseModel):
-    """Result from Models operations."""
-    success: bool = True
-    data: Dict[str, Any] = {}
-    errors: List[str] = []
-    metadata: Dict[str, Any] = {}
+class AgentInfo(BaseModel):
+    name: str
+    capabilities: List[AgentCapability]
+    model: str = "claude-sonnet-4-6"
+    max_concurrent: int = 3
+    is_available: bool = True
 
+class Message(BaseModel):
+    sender: str
+    receiver: str
+    task_id: str
+    content: Any
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
 
-class Models:
-    """Core Models implementation for agent-orchestrator."""
-    
-    def __init__(self, config: Optional[ModelsConfig] = None):
-        self.config = config or ModelsConfig()
-        self._initialized = False
-        self._state: Dict[str, Any] = {}
-        logger.info(f"Models created: {self.config.name}")
-    
-    async def initialize(self) -> None:
-        """Initialize the component."""
-        if self._initialized:
-            return
-        await self._setup()
-        self._initialized = True
-        logger.info(f"Models initialized")
-    
-    async def _setup(self) -> None:
-        """Internal setup — override in subclasses."""
-        pass
-    
-    async def process(self, input_data: Any) -> ModelsResult:
-        """Process input and return results."""
-        if not self._initialized:
-            await self.initialize()
-        try:
-            result = await self._execute(input_data)
-            return ModelsResult(success=True, data={"result": result})
-        except Exception as e:
-            logger.error(f"Models error: {e}")
-            return ModelsResult(success=False, errors=[str(e)])
-    
-    async def _execute(self, data: Any) -> Any:
-        """Core execution logic."""
-        return {"processed": True, "input_type": type(data).__name__}
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get component status."""
-        return {"name": "models", "initialized": self._initialized,
-                "config": self.config.model_dump()}
-    
-    async def shutdown(self) -> None:
-        """Graceful shutdown."""
-        self._state.clear()
-        self._initialized = False
-        logger.info(f"Models shut down")
+class ExecutionTrace(BaseModel):
+    task_id: str
+    agent: str
+    input_data: Any
+    output_data: Any
+    latency_ms: float
+    tokens_used: int = 0
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class TaskSubmission(BaseModel):
+    description: str
+    execution_policy: str = "parallel"
+    require_approval: bool = False
