@@ -1,13 +1,31 @@
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-orchestrator"
-version = "0.1.0"
-description = "Multi-agent orchestration framework for complex task coordination"
-requires-python = ">=3.11"
-dependencies = ["pydantic>=2.0", "fastapi>=0.110.0", "uvicorn>=0.27.0", "anthropic>=0.39.0", "openai>=1.0"]
+version = "0.2.0"
+description = "A small step-pipeline orchestrator with typed handoffs between AI agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Mukunda Katta" }]
+keywords = ["ai", "agents", "orchestration", "pipeline", "llm"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3.0"]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Repository = "https://github.com/MukundaKatta/agent-orchestrator"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
